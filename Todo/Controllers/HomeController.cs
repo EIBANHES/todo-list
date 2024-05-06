@@ -10,32 +10,35 @@ namespace Todo.Controllers
     public class HomeController : ControllerBase
     {
         [HttpGet("/")]
-        public List<TodoModel> Get([FromServices]AppDbContext context) // injeçao de dependencia, usa o context como serviço
-        {
-            return context.Todos.ToList();
-        }
+
+        // IActionResult -> Padroniza retorno das apis
+        public IActionResult Get([FromServices] AppDbContext context) // injeçao de dependencia, usa o context como serviço
+            => Ok(context.Todos.ToList());
 
         [HttpGet("/{id:int}")]
-        public TodoModel GetById([FromRoute] int id, [FromServices] AppDbContext context) // injeçao de dependencia, usa o context como serviço
+        public IActionResult GetById([FromRoute] int id, [FromServices] AppDbContext context) // injeçao de dependencia, usa o context como serviço
         {
-            return context.Todos.FirstOrDefault(x => x.Id == id); // pegando por id 
+            var todos = context.Todos.FirstOrDefault(x => x.Id == id); // pegando por id
+            if (todos == null)
+                return NotFound();
+            return Ok(todos);
         }
 
         [HttpPost("/")]
-        public TodoModel Post([FromBody] TodoModel todo, [FromServices] AppDbContext context) // injeçao de dependencia, usa o context como serviço
+        public IActionResult Post([FromBody] TodoModel todo, [FromServices] AppDbContext context) // injeçao de dependencia, usa o context como serviço
         {
             context.Todos.Add(todo);
             context.SaveChanges();
 
-            return todo;
+            return Created($"{todo.Id}", todo);
         }        
         
         [HttpPut("/{id:int}")]
-        public TodoModel Put([FromRoute] int id, [FromBody] TodoModel todo, [FromServices] AppDbContext context) // injeçao de dependencia, usa o context como serviço
+        public IActionResult Put([FromRoute] int id, [FromBody] TodoModel todo, [FromServices] AppDbContext context) // injeçao de dependencia, usa o context como serviço
         {
             var model = context.Todos.FirstOrDefault(x => x.Id == id);
             if (model == null)
-                return model;
+                return NotFound();
 
             model.Title = todo.Title;
             model.Done = todo.Done;
@@ -43,17 +46,19 @@ namespace Todo.Controllers
             context.Todos.Update(model);
             context.SaveChanges();
 
-            return model;
+            return Ok(model);
         }
 
         [HttpDelete("/{id:int}")]
-        public TodoModel Put([FromRoute] int id, [FromServices] AppDbContext context) // injeçao de dependencia, usa o context como serviço
+        public IActionResult Put([FromRoute] int id, [FromServices] AppDbContext context) // injeçao de dependencia, usa o context como serviço
         {
             var model = context.Todos.FirstOrDefault(x => x.Id == id);
+
+            if (model == null)
+                return NotFound();
             context.Todos.Remove(model);
             context.SaveChanges();
-            return model;
+            return Ok(model);
         }
-
     }
 }
